@@ -47,7 +47,7 @@ if current_picture is not None:
     )
 
     # img = Image.open(current_picture)
-    img = Image.open(r"assets\WhatsApp Image 2025-03-02 à 13.21.29_d7b3166c.jpg")
+    img = Image.open(r"assets\WhatsApp Image 2025-02-25 à 20.28.04_c43f2675.jpg")
     st.session_state["initial_image"] = img
 
     st.image(

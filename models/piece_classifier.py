@@ -1,5 +1,6 @@
 import os
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
 from tensorflow.keras.models import load_model
 import pickle
@@ -10,7 +11,7 @@ import numpy as np
 
 class PieceClassifier:
     LABEL_ENCODER_PATH = r"chess_piece_model\label_encoder.pkl"
-    CLASSIFIER_PATH = (r"chess_piece_model\chess_piece_model.keras")
+    CLASSIFIER_PATH = r"chess_piece_model\chess_piece_model.keras"
 
     def __init__(self):
         # Load the LabelEncoder object
@@ -35,7 +36,7 @@ class PieceClassifier:
         """
         # Classifier les pièces
         piece_positions = []
-        st.session_state['classified_pieces'] = {}
+        st.session_state["classified_pieces"] = {}
 
         for i, j, square in squares:
             square = cv2.resize(square, (64, 64))
@@ -43,8 +44,8 @@ class PieceClassifier:
             pred = self.Model.predict(square, verbose=0)
             piece_type = np.argmax(pred, axis=1)[0]
             piece = self.LabelEncoder.inverse_transform([piece_type])[0]
-            
-            st.session_state['classified_pieces'][(i, j)] = piece
+
+            st.session_state["classified_pieces"][(i, j)] = piece
 
             if "cell" not in piece:
                 piece_positions.append((i, j, piece.split("_")[1], piece.split("_")[0]))
