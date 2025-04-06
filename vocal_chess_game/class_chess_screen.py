@@ -167,63 +167,75 @@ class ChessScreen:
                 )
 
         except Exception as err:
+            self.logger.warning("error in draw_bench")
             self.logger.error(err)
 
     def draw_board(self, chess_game):
-        squares_to_highlight = chess_game.get_squares_to_highlight()
-        checkers = chess_game.board.checkers()
+        try:
+            squares_to_highlight = chess_game.get_squares_to_highlight()
+            checkers = chess_game.board.checkers()
 
-        for row in range(8):
+            for row in range(8):
+                for col in range(8):
+                    color_name = "white" if (row + col) % 2 == 0 else "black"
+                    square = chess.parse_square(f"{chr(97 + col)}{str(8 - row)}")
+
+                    if square in checkers:
+                        color_name = f"{color_name}_checker"
+                    elif square in squares_to_highlight:
+                        color_name = f"{color_name}_action"
+
+                    pygame.draw.rect(
+                        surface=self.screen,
+                        color=self.SQUARE_COLORS[color_name],
+                        rect=(
+                            self.BOARD_X + col * self.SQUARE_SIZE,
+                            self.BOARD_Y + row * self.SQUARE_SIZE,
+                            self.SQUARE_SIZE,
+                            self.SQUARE_SIZE,
+                        ),
+                    )
+
+            # On écrit le nom des lignes (1, 2, 3, 4, 5, 6, 7, 8) sur la colonne la plus à gauche du plateau
+            for row in range(8):
+                label = self.SMALL_FONT.render(str(8 - row), True, self.TEXT_COLOR)
+                self.screen.blit(
+                    label,
+                    (self.BOARD_X + 5, self.BOARD_Y + row * self.SQUARE_SIZE + 10),
+                )
+
+            # On écrit le nom des colonnes (a, b, c, d, e, f, g, h) sur la ligne la plus en bas du plateau
             for col in range(8):
-                color_name = "white" if (row + col) % 2 == 0 else "black"
-                square = chess.parse_square(f"{chr(97 + col)}{str(8 - row)}")
-
-                if square in checkers:
-                    color_name = f"{color_name}_checker"
-                elif square in squares_to_highlight:
-                    color_name = f"{color_name}_action"
-
-                pygame.draw.rect(
-                    surface=self.screen,
-                    color=self.SQUARE_COLORS[color_name],
-                    rect=(
-                        self.BOARD_X + col * self.SQUARE_SIZE,
-                        self.BOARD_Y + row * self.SQUARE_SIZE,
-                        self.SQUARE_SIZE,
-                        self.SQUARE_SIZE,
+                label = self.SMALL_FONT.render(chr(97 + col), True, self.TEXT_COLOR)
+                self.screen.blit(
+                    label,
+                    (
+                        self.BOARD_X + col * self.SQUARE_SIZE + self.SQUARE_SIZE - 12,
+                        self.BOARD_Y + self.BOARD_HEIGHT - 20,
                     ),
                 )
 
-        # On écrit le nom des lignes (1, 2, 3, 4, 5, 6, 7, 8) sur la colonne la plus à gauche du plateau
-        for row in range(8):
-            label = self.SMALL_FONT.render(str(8 - row), True, self.TEXT_COLOR)
-            self.screen.blit(
-                label, (self.BOARD_X + 5, self.BOARD_Y + row * self.SQUARE_SIZE + 10)
-            )
-
-        # On écrit le nom des colonnes (a, b, c, d, e, f, g, h) sur la ligne la plus en bas du plateau
-        for col in range(8):
-            label = self.SMALL_FONT.render(chr(97 + col), True, self.TEXT_COLOR)
-            self.screen.blit(
-                label,
-                (
-                    self.BOARD_X + col * self.SQUARE_SIZE + self.SQUARE_SIZE - 12,
-                    self.BOARD_Y + self.BOARD_HEIGHT - 20,
-                ),
-            )
+        except Exception as err:
+            self.logger.warning("error in draw_board")
+            self.logger.error(err)
 
     def draw_pieces(self, board):
-        for square in chess.SQUARES:
-            piece = board.piece_at(square)
-            if piece:
-                col, row = chess.square_file(square), chess.square_rank(square)
-                self.screen.blit(
-                    self.PIECE_IMAGES[piece.symbol()],
-                    (
-                        self.BOARD_X + col * self.SQUARE_SIZE,
-                        self.BOARD_Y + (7 - row) * self.SQUARE_SIZE,
-                    ),
-                )
+        try:
+            for square in chess.SQUARES:
+                piece = board.piece_at(square)
+                if piece:
+                    col, row = chess.square_file(square), chess.square_rank(square)
+                    self.screen.blit(
+                        self.PIECE_IMAGES[piece.symbol()],
+                        (
+                            self.BOARD_X + col * self.SQUARE_SIZE,
+                            self.BOARD_Y + (7 - row) * self.SQUARE_SIZE,
+                        ),
+                    )
+
+        except Exception as err:
+            self.logger.warning("error in draw_pieces")
+            self.logger.error(err)
 
     def draw_turn_indicator(self, board_turn: chess.Color = None):
         if board_turn == chess.WHITE:

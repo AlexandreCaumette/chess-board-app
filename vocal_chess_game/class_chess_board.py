@@ -180,7 +180,7 @@ class ChessBoard:
         for color in [chess.WHITE, chess.BLACK]:
             square = self.get_random_square_with_piece_on_board(color=color)
 
-            self.captured_pieces[color].append(self.board.piece_at(square))
+            self.captured_pieces[color].append(self.board.piece_type_at(square))
 
             self.board.remove_piece_at(square)
 
