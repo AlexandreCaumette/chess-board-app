@@ -28,17 +28,16 @@ class ChessSounds:
             "checkmate": pygame.mixer.Sound(
                 "vocal_chess_game/assets/sounds/checkmate.mp3"
             ),
-            "pop_move": pygame.mixer.Sound(
-                "vocal_chess_game/assets/sounds/pop_move.mp3"
-            ),
+            "annule": pygame.mixer.Sound("vocal_chess_game/assets/sounds/annule.mp3"),
+            "magie": pygame.mixer.Sound("vocal_chess_game/assets/sounds/magie.mp3"),
             "pawn_captured": pygame.mixer.Sound(
                 "vocal_chess_game/assets/sounds/pawn_captured.mp3"
             ),
             "rook": pygame.mixer.Sound("vocal_chess_game/assets/sounds/rook.mp3"),
             "roulette": pygame.mixer.Sound(
-                "vocal_chess_game/assets/sounds/rasputin.mp3"
+                "vocal_chess_game/assets/sounds/roulette.mp3"
             ),
-            "zombie": pygame.mixer.Sound("vocal_chess_game/assets/sounds/wolf.mp3"),
+            "zombie": pygame.mixer.Sound("vocal_chess_game/assets/sounds/zombie.mp3"),
         }
 
     def play(self, sound: str):

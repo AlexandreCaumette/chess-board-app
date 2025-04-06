@@ -4,10 +4,16 @@ import logging
 
 
 class ChessVocal:
-    def __init__(self):
+    def __init__(self, actions: list = []):
+        """This function initialize the instance of the class ChessVocal, which is the module that handles
+        the vocal recognition and interpretation.
+
+        Args:
+            actions (list, optional): The list of the available actions to be recognized. Defaults to [].
+        """
         self.logger = logging.getLogger(__name__)
 
-        self.AVAILABLE_COMMANDS = ["suggestion", "annule", "roulette", "zombie"]
+        self.AVAILABLE_COMMANDS = actions
 
         self.logger.info("Vocal initialized")
 

@@ -1,5 +1,4 @@
 from class_chess_screen import ChessScreen
-from class_chess_stockfish import ChessStockfish
 from class_chess_board import ChessBoard
 from class_chess_sounds import ChessSounds
 from class_chess_vocal import ChessVocal
@@ -45,11 +44,11 @@ class ChessApp:
 
             self.chess_game = ChessBoard()
 
-            self.stockfish = ChessStockfish()
+            self.ACTIONS = ["suggestion", "magie", "roulette", "zombie", "annule"]
 
-            self.chess_screen = ChessScreen()
+            self.chess_screen = ChessScreen(actions=self.ACTIONS)
 
-            self.vocal = ChessVocal()
+            self.vocal = ChessVocal(actions=self.ACTIONS)
 
             self.sounds = ChessSounds()
 
@@ -58,7 +57,9 @@ class ChessApp:
             self.best_move_message = ""
 
         except Exception as err:
-            self.logger.critical(msg=err)
+            self.logger.critical("the application failed to initialize")
+            self.logger.error(err)
+            raise err
 
     def run(self):
         self.logger.info("Running the application")
@@ -78,7 +79,8 @@ class ChessApp:
 
                 self.chess_screen.draw_board(self.chess_game)
                 self.chess_screen.draw_bench(
-                    captured_pieces=self.chess_game.captured_pieces
+                    captured_pieces=self.chess_game.captured_pieces,
+                    used_actions=self.chess_game.actions,
                 )
                 self.chess_screen.draw_pieces(self.chess_game.board)
 
@@ -105,27 +107,13 @@ class ChessApp:
         self.logger.debug(f"Processing move : {command}")
 
         try:
-            self.chess_game.reset_variable()
+            if command in self.ACTIONS:
+                message = self.chess_game.play_action(command)
+                self.sounds.play(command)
 
-            if command == "zombie":
-                self.sounds.play("zombie")
-                self.chess_game.command_walking_dead()
-                return
+                if message:
+                    self.best_move_message = message
 
-            if command == "roulette":
-                self.sounds.play("roulette")
-                self.chess_game.command_roulette_russe()
-                return
-
-            if command == "annule":
-                self.sounds.play("pop_move")
-                self.chess_game.rollback_last_move()
-                return
-
-            if command == "suggestion":
-                best_move = self.stockfish.get_best_move(self.chess_game.board)
-                self.best_move_message = f"Mouvement suggéré : {best_move}"
-                self.sounds.play("suggestion")
                 return
 
             move = chess.Move.from_uci(command)
@@ -134,7 +122,7 @@ class ChessApp:
 
             from_chess_square = chess.parse_square(command[:2])
 
-            if move in self.chess_game.board.legal_moves:
+            if self.chess_game.is_move_legal(move):
                 if self.chess_game.board.is_capture(move):
                     self.sounds.play("capture")  # Play the sound
                     captured_piece = self.chess_game.board.piece_type_at(move.to_square)
@@ -169,7 +157,7 @@ class ChessApp:
                 else:
                     self.sounds.play("valid_move")
 
-                self.chess_game.board.push(move)
+                self.chess_game.play_move(move)
 
                 if self.chess_game.board.is_checkmate():
                     self.logger.info("is checkmate")

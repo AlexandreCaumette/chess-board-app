@@ -1,6 +1,7 @@
 import pygame
 import chess
 import logging
+import os
 
 
 class ChessScreen:
@@ -24,26 +25,29 @@ class ChessScreen:
         "black": (118, 150, 86),
         "white_checker": (238, 238, 170),
         "black_checker": (70, 150, 86),
-        "white_roulette": (238, 238, 50),
-        "black_roulette": (160, 150, 86),
+        "white_action": (238, 238, 50),
+        "black_action": (238, 238, 50),
     }
     BENCH_COLOR = (204, 157, 58)
     TEXT_COLOR = (0, 0, 0)
     TURN_INDICATOR_COLOR = (50, 50, 200)
     INVALID_MOVE_COLOR = (200, 0, 0)
     BEST_MOVE_COLOR = (0, 200, 0)
+    ACTION_IMAGES = []
 
-    def __init__(self):
+    def __init__(self, actions: list = []):
         self.logger = logging.getLogger(__name__)
 
         try:
             self.logger.info(msg="Screen initializing...")
             pygame.init()
 
+            self.AVAILABLE_COMMANDS = actions
+
             self.NORMAL_FONT = pygame.font.Font(None, 36)
             self.SMALL_FONT = pygame.font.Font(None, 24)
 
-            self.load_pieces_images()
+            self.load_assets_images()
 
             self.screen = pygame.display.set_mode(
                 (self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
@@ -60,14 +64,19 @@ class ChessScreen:
     def fill_game_screen(self, color):
         self.screen.fill(color, rect=(0, 0, self.GAME_WIDTH, self.GAME_HEIGHT))
 
-    def load_pieces_images(self):
+    def load_assets_images(self):
         piece_images = {}
         piece_symbols = ["p", "n", "b", "r", "q", "k", "P", "N", "B", "R", "Q", "K"]
+
         for symbol in piece_symbols:
+            image_filepath = os.path.join(
+                "vocal_chess_game", "assets", "images", "pieces"
+            )
+
             if symbol.isupper():
-                image_filepath = f"vocal_chess_game/assets/pieces/w{symbol.lower()}.png"
+                image_filepath = os.path.join(image_filepath, f"w{symbol.lower()}.png")
             else:
-                image_filepath = f"vocal_chess_game/assets/pieces/b{symbol}.png"
+                image_filepath = os.path.join(image_filepath, f"b{symbol}.png")
 
             piece_images[symbol] = pygame.transform.scale(
                 pygame.image.load(image_filepath), (self.SQUARE_SIZE, self.SQUARE_SIZE)
@@ -75,21 +84,42 @@ class ChessScreen:
 
         self.PIECE_IMAGES = piece_images
 
-    def draw_bench(self, captured_pieces: dict):
+        action_images = {}
+
+        for action in self.AVAILABLE_COMMANDS:
+            image_filepath = os.path.join(
+                "vocal_chess_game", "assets", "images", "actions", f"{action}.png"
+            )
+            action_images[action] = pygame.transform.scale(
+                pygame.image.load(image_filepath), (self.SQUARE_SIZE, self.SQUARE_SIZE)
+            )
+
+        self.ACTION_IMAGES = action_images
+
+    def draw_bench(self, captured_pieces: dict, used_actions: dict):
+        """This function draws the white and black bench, that shows the captured pieces, the score, and the powers.
+
+        Args:
+            captured_pieces (dict): The list of captured pieces for both player.
+        """
         try:
             BLACK_BENCH_Y = self.BOARD_Y - self.BENCH_HEIGHT
             WHITE_BENCH_Y = self.BOARD_Y + self.BOARD_HEIGHT
 
+            # draws the black bench above the chess board
             self.screen.fill(
                 self.BENCH_COLOR,
                 rect=(self.BOARD_X, BLACK_BENCH_Y, self.BENCH_WIDTH, self.BENCH_HEIGHT),
             )
+
+            # draws the white board below the chess board
             self.screen.fill(
                 self.BENCH_COLOR,
                 rect=(self.BOARD_X, WHITE_BENCH_Y, self.BENCH_WIDTH, self.BENCH_HEIGHT),
             )
 
-            for index, piece_type in enumerate(captured_pieces["WHITE"]):
+            # draws the white captured pieces
+            for index, piece_type in enumerate(captured_pieces[chess.WHITE]):
                 piece_image = self.PIECE_IMAGES[chess.piece_symbol(piece_type).upper()]
                 image = pygame.transform.scale(piece_image, (32, 32))
 
@@ -97,12 +127,43 @@ class ChessScreen:
                     source=image, dest=(self.BOARD_X + index * 20, WHITE_BENCH_Y)
                 )
 
-            for index, piece_type in enumerate(captured_pieces["BLACK"]):
+            # draws the black captured pieces
+            for index, piece_type in enumerate(captured_pieces[chess.BLACK]):
                 piece_image = self.PIECE_IMAGES[chess.piece_symbol(piece_type)]
                 image = pygame.transform.scale(piece_image, (32, 32))
 
                 self.screen.blit(
                     source=image, dest=(self.BOARD_X + index * 20, BLACK_BENCH_Y)
+                )
+
+            # draws the white unused powers
+            for index, action in enumerate(self.AVAILABLE_COMMANDS):
+                if action in used_actions[chess.WHITE]:
+                    continue
+
+                image = pygame.transform.scale(self.ACTION_IMAGES[action], (32, 32))
+
+                self.screen.blit(
+                    source=image,
+                    dest=(
+                        self.BOARD_X + self.BOARD_WIDTH - (index + 1) * 45,
+                        WHITE_BENCH_Y + 5,
+                    ),
+                )
+
+            # draws the black unused powers
+            for index, action in enumerate(self.AVAILABLE_COMMANDS):
+                if action in used_actions[chess.BLACK]:
+                    continue
+
+                image = pygame.transform.scale(self.ACTION_IMAGES[action], (32, 32))
+
+                self.screen.blit(
+                    source=image,
+                    dest=(
+                        self.BOARD_X + self.BOARD_WIDTH - (index + 1) * 45,
+                        BLACK_BENCH_Y + 5,
+                    ),
                 )
 
         except Exception as err:
@@ -120,7 +181,7 @@ class ChessScreen:
                 if square in checkers:
                     color_name = f"{color_name}_checker"
                 elif square in squares_to_highlight:
-                    color_name = f"{color_name}_roulette"
+                    color_name = f"{color_name}_action"
 
                 pygame.draw.rect(
                     surface=self.screen,
