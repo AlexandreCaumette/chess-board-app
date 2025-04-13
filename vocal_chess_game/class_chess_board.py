@@ -41,6 +41,17 @@ class ChessBoard:
                 f"action <{action}> registered for player <{self.board.turn}>"
             )
 
+            if action == "annule":
+                self.command_annule()
+                return
+
+            if action == "suggestion":
+                best_move = self.stockfish.get_best_move(self.board)
+                return f"Mouvement suggéré : {best_move}"
+
+            if self.board.is_checkmate():
+                raise Exception("can't use action when you're checkmate")
+
             if action == "zombie":
                 self.command_zombie()
                 self.board.turn = not self.board.turn
@@ -52,22 +63,65 @@ class ChessBoard:
                 self.board.turn = not self.board.turn
                 return
 
-            if action == "annule":
-                self.command_annule()
-                return
-
             if action == "roulette":
                 self.command_roulette()
                 self.board.turn = not self.board.turn
                 return
 
-            if action == "suggestion":
-                best_move = self.stockfish.get_best_move(self.board)
-                return f"Mouvement suggéré : {best_move}"
+            if action == "tremblement":
+                self.command_tremblement()
+                self.board.turn = not self.board.turn
+                return
 
         except Exception as err:
             self.logger.error(err)
             raise err
+
+    def command_tremblement(self):
+        side = random.choice([-1, 1])
+
+        columns = ["a", "b", "c", "d", "e", "f", "g", "h"][::side]
+
+        # on parcourt chaque ligne de l'échiquier
+        for number in range(1, 9):
+            # pour chaque ligne on parcourt chaque colonne
+            for index_col in range(8):
+                # on repère la case de l'échiquier
+                current_square = chess.parse_square(columns[index_col] + str(number))
+
+                # on récupère la pièce sur cette case
+                piece = self.board.piece_at(current_square)
+
+                # s'il n'y a pas de pièces sur cette case, on passe
+                if piece is None:
+                    continue
+
+                self.logger.debug(
+                    f"tremblement square <{current_square}> and piece <{piece}>"
+                )
+
+                next_squares = [current_square]
+
+                # on regarde la colonne suivante (dans le sens du glissement de terrain)
+                index_next_col = index_col - 1
+
+                # on cherche tant que le numéro de la colonne est valide
+                while index_next_col >= 0:
+                    square = chess.parse_square(columns[index_next_col] + str(number))
+
+                    # si on trouve une pièce sur cette case, on ne peut pas aller plus loin et on s'arrête
+                    if self.board.piece_at(square) is not None:
+                        break
+
+                    # sinon, on peut aller sur cette case, et on cherche plus loin
+                    next_squares.append(square)
+                    index_next_col -= 1
+
+                new_square = next_squares[-1]
+
+                if new_square != current_square:
+                    self.board.set_piece_at(new_square, piece)
+                    self.board.remove_piece_at(current_square)
 
     def is_move_legal(self, move: chess.Move) -> bool:
         """Verify if a movement is legal, meaning it's a valid chess move, or it's not in the list of forbidden moves (e.g.
@@ -143,38 +197,32 @@ class ChessBoard:
         return square
 
     def command_magie(self):
-        # Select one random piece from white and black
-        white_sq = self.get_random_square_with_piece_on_board(color=chess.WHITE)
-        black_sq = self.get_random_square_with_piece_on_board(color=chess.BLACK)
+        for color in [chess.WHITE, chess.BLACK]:
+            # Select one random piece
+            square = self.get_random_square_with_piece_on_board(color=color)
 
-        # Get the piece objects
-        white_piece = self.board.piece_at(white_sq)
-        new_white_piece = white_piece.piece_type
+            # Get the piece objects
+            piece = self.board.piece_at(square)
+            new_piece = piece.piece_type
 
-        while new_white_piece == white_piece.piece_type:
-            new_white_piece = chess.Piece(
-                random.choice(
-                    [chess.PAWN, chess.ROOK, chess.KNIGHT, chess.BISHOP, chess.QUEEN]
-                ),
-                chess.WHITE,
-            )
+            while new_piece == piece.piece_type:
+                new_piece = chess.Piece(
+                    random.choice(
+                        [
+                            chess.PAWN,
+                            chess.ROOK,
+                            chess.KNIGHT,
+                            chess.BISHOP,
+                            chess.QUEEN,
+                        ]
+                    ),
+                    color,
+                )
 
-        self.logger.debug(f"new white piece type : <{new_white_piece}>")
+            # Set the new pieces on the board
+            self.board.set_piece_at(square, new_piece)
 
-        black_piece = self.board.piece_at(black_sq)
-        new_black_piece = black_piece.piece_type
-
-        while new_black_piece == black_piece.piece_type:
-            new_black_piece = chess.Piece(random.choice(range(1, 7)), chess.BLACK)
-
-        self.logger.debug(f"new black piece type : <{new_black_piece}>")
-
-        # Set the new pieces on the board
-        self.board.set_piece_at(white_sq, new_white_piece)
-        self.board.set_piece_at(black_sq, new_black_piece)
-
-        self.squares_to_highlight.append(white_sq)
-        self.squares_to_highlight.append(black_sq)
+            self.squares_to_highlight.append(square)
 
     def command_roulette(self):
         for color in [chess.WHITE, chess.BLACK]:

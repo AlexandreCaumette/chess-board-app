@@ -44,7 +44,14 @@ class ChessApp:
 
             self.chess_game = ChessBoard()
 
-            self.ACTIONS = ["suggestion", "magie", "roulette", "zombie", "annule"]
+            self.ACTIONS = [
+                "suggestion",
+                "magie",
+                "roulette",
+                "zombie",
+                "annule",
+                "tremblement",
+            ]
 
             self.chess_screen = ChessScreen(actions=self.ACTIONS)
 
@@ -133,6 +140,9 @@ class ChessApp:
 
                     if captured_piece == chess.PAWN:
                         self.sounds.play("pawn_captured")
+
+                elif move.promotion is not None:
+                    self.sounds.play("promotion")
 
                 elif (
                     self.chess_game.board.piece_type_at(from_chess_square)

@@ -14,6 +14,13 @@ class ChessVocal:
         self.logger = logging.getLogger(__name__)
 
         self.AVAILABLE_COMMANDS = actions
+        self.AVAILABLE_PROMOTIONS = {
+            "reine": "q",
+            "pion": "p",
+            "tour": "r",
+            "cavalier": "n",
+            "fou": "b",
+        }
 
         self.logger.info("Vocal initialized")
 
@@ -43,6 +50,7 @@ class ChessVocal:
         command = command.replace("des ", "d")
         command = command.replace("deux", "2")
         command = command.replace("annuler", "annule")
+        command = command.replace("rennes", "reine")
         command = re.sub(pattern=r"\b(1[0-9])\b", repl=replacement, string=command)
         command = re.sub(pattern=r"\bans\b", repl="en", string=command)
 
@@ -77,6 +85,15 @@ class ChessVocal:
                 self.logger.error("Speech recognition service unavailable")
         return None
 
+    def interpret_promotion(self, words: list) -> str:
+        if "promotion" not in words:
+            return ""
+
+        index_promotion = words.index("promotion")
+        promotion = words[index_promotion + 1]
+
+        return self.AVAILABLE_PROMOTIONS.get(promotion, "")
+
     def interpret_vocal_input(self, vocal_input: str) -> str:
         words = vocal_input.split()
 
@@ -93,11 +110,12 @@ class ChessVocal:
         if any([len(word) < 2 for word in words]):
             raise Exception("Une des positions n'est pas complète")
 
-        if "en" in words:
-            index_en = words.index("en")
-            from_square = words[index_en - 1]
-            to_square = words[index_en + 1]
+        index_en = words.index("en")
+        from_square = words[index_en - 1]
+        to_square = words[index_en + 1]
 
-            return from_square + to_square
+        move = from_square + to_square
 
-        return None
+        promotion = self.interpret_promotion(words)
+
+        return move + promotion
